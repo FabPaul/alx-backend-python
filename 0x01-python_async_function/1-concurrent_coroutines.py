@@ -1,4 +1,4 @@
-#!?usr/bin/env python3
+#!/usr/bin/env python3
 """ async routint that takes 2 args """
 
 
