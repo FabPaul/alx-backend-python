@@ -3,13 +3,17 @@
 
 import unittest
 from client import GithubOrgClient
-from parameterized import parameterized
+from parameterized import (
+    parameterized,
+    parameterized_class
+)
 from unittest.mock import (
     patch,
     MagicMock,
     PropertyMock
 )
 from typing import Dict
+from fixtures import TEST_PAYLOAD
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -76,3 +80,48 @@ class TestGithubOrgClient(unittest.TestCase):
         github_client = GithubOrgClient("org_name")
         result = github_client.has_license(repo, license_key)
         self.assertEqual(result, expected_result)
+
+
+@parameterized_class([
+    {
+        'org_payload': TEST_PAYLOAD[0][0],
+        'repos_payload': TEST_PAYLOAD[0][1],
+        'expected_repos': TEST_PAYLOAD[0][2],
+        'apache2_repos': TEST_PAYLOAD[0][3],
+    }
+])
+class TestIntegrationGithubOrgClient(unittest.TestCase):
+    """Test class"""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        """Set Up Class"""
+        cls.get_patcher = patch("requests.get")
+        cls.mock_get = cls.get_patcher.start()
+        org_payload, repos_payload, expected_repos, apache2_repos = (
+            TEST_PAYLOAD[0]
+            )
+
+        cls.mock_get.side_effect = [
+            MagicMock(json=cls._json_mock(org_payload)),
+            MagicMock(json=cls._json_mock(repos_payload)),
+            MagicMock(json=cls._json_mock(apache2_repos)),
+            MagicMock(json=cls._json_mock(expected_repos)),
+        ]
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        """Teardown Class"""
+        cls.get_patcher.stop()
+
+    @staticmethod
+    def _json_mock(return_value):
+        """Helper function to createa MagicMock for json method"""
+        mock_json = MagicMock(return_value=return_value)
+        return mock_json
+
+    def test_public_repos_integration(self):
+        """Public repo integration test"""
+        github_client = GithubOrgClient("org_name")
+        result = github_client.public_repos()
+        self.assertEqual(result, self.expected_repos)
