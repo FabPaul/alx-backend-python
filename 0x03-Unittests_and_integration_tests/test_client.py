@@ -9,6 +9,7 @@ from unittest.mock import (
     MagicMock,
     PropertyMock
 )
+from typing import Dict
 
 
 class TestGithubOrgClient(unittest.TestCase):
@@ -65,3 +66,13 @@ class TestGithubOrgClient(unittest.TestCase):
                 f"https://api.github.com/orgs/{org_name}/repos"
                 )
             self.assertEqual(result, ["repos1", "repos2"])
+
+    @parameterized.expand([
+        ({"license": {"key": "my_license"}}, ("my_license"), True),
+        ({"license": {"key": "other_license"}}, ("my_license"), False)
+    ])
+    def test_has_license(self, repo: Dict, license_key: str, expected_result):
+        """Test has license"""
+        github_client = GithubOrgClient("org_name")
+        result = github_client.has_license(repo, license_key)
+        self.assertEqual(result, expected_result)
